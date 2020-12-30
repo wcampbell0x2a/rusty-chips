@@ -1,4 +1,3 @@
-use sdl2;
 use sdl2::pixels;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
@@ -34,7 +33,7 @@ impl Display {
         canvas.clear();
         canvas.present();
 
-        Self { canvas: canvas }
+        Self { canvas }
     }
 
     pub fn draw(&mut self, pixels: &[[u8; Processor::WIDTH]; Processor::HEIGHT]) {

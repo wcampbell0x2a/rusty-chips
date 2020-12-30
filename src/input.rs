@@ -1,4 +1,3 @@
-use sdl2;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
@@ -8,7 +7,7 @@ pub struct Input {
 
 impl Input {
     pub fn new(sdl_context: &sdl2::Sdl) -> Self {
-        Input {
+        Self {
             events: sdl_context.event_pump().unwrap(),
         }
     }

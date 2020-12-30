@@ -8,12 +8,11 @@ mod input;
 mod processor;
 mod rom;
 
-use crate::audio::{Audio, SquareWave};
+use crate::audio::Audio;
 use crate::display::Display;
 use crate::input::Input;
-use crate::processor::{Instruction, Processor};
+use crate::processor::Processor;
 use crate::rom::Rom;
-use deku::DekuContainerRead;
 
 fn main() {
     let sleep_duration = Duration::from_millis(2);

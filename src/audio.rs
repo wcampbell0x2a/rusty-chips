@@ -1,4 +1,3 @@
-use sdl2;
 use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
 
 pub struct Audio {
@@ -29,7 +28,7 @@ impl Audio {
             })
             .unwrap();
 
-        Audio { device: device }
+        Self { device }
     }
 
     pub fn start_beep(&self) {

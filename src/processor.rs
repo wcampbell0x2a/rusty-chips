@@ -1,5 +1,5 @@
 use deku::prelude::*;
-use rand;
+
 use rand::Rng;
 use std::ops::Deref;
 
@@ -73,11 +73,11 @@ pub enum ProgramCounter {
 
 impl ProgramCounter {
     // TODO impl From
-    fn skip_cond(condition: bool) -> ProgramCounter {
+    fn skip_cond(condition: bool) -> Self {
         if condition {
-            ProgramCounter::Skip
+            Self::Skip
         } else {
-            ProgramCounter::Next
+            Self::Next
         }
     }
 }
@@ -104,15 +104,15 @@ impl Processor {
     pub const RAM: usize = 4096;
 
     pub fn new() -> Self {
-        let mut ram = [0u8; Self::RAM];
+        let mut ram = [0_u8; Self::RAM];
         for i in 0..FONT_SET.len() {
             ram[i] = FONT_SET[i];
         }
 
-        Processor {
+        Self {
             vram: [[0; Self::WIDTH]; Self::HEIGHT],
             vram_changed: false,
-            ram: ram,
+            ram,
             stack: [0; 16],
             v: [0; 16],
             i: 0,
@@ -210,7 +210,7 @@ impl Processor {
             }
             // 7xkk
             Instruction::ADD(x, kk) => {
-                let vx = self.v[*x] as u16;
+                let vx = u16::from(self.v[*x]);
                 let val = *kk as u16;
                 let result = vx + val;
                 self.v[*x] = result as u8;
@@ -232,8 +232,8 @@ impl Processor {
                         self.v[*x] ^= self.v[*y];
                     }
                     EightType::Add => {
-                        let vx = self.v[*x] as u16;
-                        let vy = self.v[*y] as u16;
+                        let vx = u16::from(self.v[*x]);
+                        let vy = u16::from(self.v[*y]);
                         let result = vx + vy;
                         self.v[*x] = result as u8;
                         self.v[0x0f] = if result > 0xFF { 1 } else { 0 };
@@ -251,7 +251,7 @@ impl Processor {
                         self.v[*x] = self.v[*y].wrapping_sub(self.v[*x]);
                     }
                     EightType::StoreShiftRight => {
-                        self.v[0x0f] = (self.v[*x] & 0b10000000) >> 7;
+                        self.v[0x0f] = (self.v[*x] & 0b1000_0000) >> 7;
                         self.v[*x] <<= 1;
                     }
                 }
@@ -271,9 +271,9 @@ impl Processor {
             Instruction::Draw(x, y, n) => {
                 self.v[0x0f] = 0;
                 for byte in 0..*n {
-                    let y = (self.v[*y] as usize + byte) % Processor::HEIGHT;
+                    let y = (self.v[*y] as usize + byte) % Self::HEIGHT;
                     for bit in 0..8 {
-                        let x = (self.v[*x] as usize + bit) % Processor::WIDTH;
+                        let x = (self.v[*x] as usize + bit) % Self::WIDTH;
                         let color = (self.ram[self.i + byte] >> (7 - bit)) & 1;
                         self.v[0x0f] |= color & self.vram[y][x];
                         self.vram[y][x] ^= color;
@@ -319,12 +319,12 @@ impl Processor {
                         self.ram[self.i + 2] = self.v[*x] % 10;
                     }
                     LDType::StoreVToMem => {
-                        for i in 0..*x + 1 {
+                        for i in 0..=*x {
                             self.ram[self.i + i] = self.v[i];
                         }
                     }
                     LDType::FillVWithMem => {
-                        for i in 0..*x + 1 {
+                        for i in 0..=*x {
                             self.v[i] = self.ram[self.i + i];
                         }
                     }
@@ -636,8 +636,8 @@ mod tests {
     // SHL Vx
     #[test]
     fn test_op_8x0e() {
-        check_math(0b11000000, 0, 0x0e, 0b10000000, 1);
-        check_math(0b00000111, 0, 0x0e, 0b00001110, 0);
+        check_math(0b1100_0000, 0, 0x0e, 0b1000_0000, 1);
+        check_math(0b0000_0111, 0, 0x0e, 0b0000_1110, 0);
     }
 
     // SNE VX, VY
@@ -684,8 +684,8 @@ mod tests {
     fn test_op_dxyn() {
         let mut processor = build_processor();
         processor.i = 0;
-        processor.ram[0] = 0b11111111;
-        processor.ram[1] = 0b00000000;
+        processor.ram[0] = 0b1111_1111;
+        processor.ram[1] = 0b0000_0000;
         processor.vram[0][0] = 1;
         processor.vram[0][1] = 0;
         processor.vram[1][0] = 1;
@@ -709,7 +709,7 @@ mod tests {
         let x = Processor::WIDTH - 4;
 
         processor.i = 0;
-        processor.ram[0] = 0b11111111;
+        processor.ram[0] = 0b1111_1111;
         processor.v[0] = x as u8;
         processor.v[1] = 0;
         processor.execute(Instruction::from_bytes((&[0xd0, 0x11], 0)).unwrap().1);
@@ -735,8 +735,8 @@ mod tests {
         let y = Processor::HEIGHT - 1;
 
         processor.i = 0;
-        processor.ram[0] = 0b11111111;
-        processor.ram[1] = 0b11111111;
+        processor.ram[0] = 0b1111_1111;
+        processor.ram[1] = 0b1111_1111;
         processor.v[0] = 0;
         processor.v[1] = y as u8;
         processor.execute(Instruction::from_bytes((&[0xd0, 0x12], 0)).unwrap().1);
@@ -879,13 +879,13 @@ mod tests {
     #[test]
     fn test_op_fx65() {
         let mut processor = build_processor();
-        for i in 0..16 as usize {
+        for i in 0..16_usize {
             processor.ram[1000 + i] = i as u8;
         }
         processor.i = 1000;
         processor.execute(Instruction::from_bytes((&[0xff, 0x65], 0)).unwrap().1);
 
-        for i in 0..16 as usize {
+        for i in 0..16_usize {
             assert_eq!(processor.v[i], processor.ram[1000 + i]);
         }
         assert_eq!(processor.pc, NEXT_PC);
