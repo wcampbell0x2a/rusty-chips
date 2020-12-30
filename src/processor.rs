@@ -345,49 +345,34 @@ impl Processor {
 pub enum Instruction {
     #[deku(id = "0x0")]
     ZeroZero(u4, u4, ZeroZeroType),
-
     #[deku(id = "0x1")]
     Jump(NNN),
-
     #[deku(id = "0x2")]
     Execute(NNN),
-
     #[deku(id = "0x3")]
     SkipEq(X, KK),
-
     #[deku(id = "0x4")]
     SkipNotEq(X, KK),
-
     #[deku(id = "0x5")]
     SkipEqReg(X, Y, u4),
-
     #[deku(id = "0x6")]
     LDValue(X, KK),
-
     #[deku(id = "0x7")]
     ADD(X, KK),
-
     #[deku(id = "0x8")]
     LDRegister(X, Y, EightType),
-
     #[deku(id = "0x9")]
     SNE(X, Y, u4),
-
     #[deku(id = "0xa")]
     StoreMemInRegister(NNN),
-
     #[deku(id = "0xb")]
     JumpToAddress(NNN),
-
     #[deku(id = "0xc")]
     SetRandomNumberWithMask(X, KK),
-
     #[deku(id = "0xd")]
     Draw(X, Y, N),
-
     #[deku(id = "0xe")]
     SKP(X, SKPType),
-
     #[deku(id = "0xf")]
     LD(X, LDType),
 }
