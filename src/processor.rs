@@ -142,8 +142,8 @@ impl Processor {
         self.vram_changed = false;
 
         if self.keypad_waiting {
-            for i in 0..keypad.len() {
-                if keypad[i] {
+            for (i, key) in keypad.iter().enumerate() {
+                if *key {
                     self.keypad_waiting = false;
                     self.v[self.keypad_register] = i as u8;
                     break;
