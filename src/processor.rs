@@ -172,23 +172,19 @@ impl Processor {
 
     pub fn execute(&mut self, instruction: Instruction) {
         let pc = match instruction {
-            Instruction::ZeroZero(zerozero) => match zerozero.t {
-                // 00e0
-                ZeroZeroType::Cls => {
-                    for y in 0..Self::HEIGHT {
-                        for x in 0..Self::WIDTH {
-                            self.vram[y][x] = 0;
-                        }
+            Instruction::ZeroZero(_, _, ZeroZeroType::Cls) => {
+                for y in 0..Self::HEIGHT {
+                    for x in 0..Self::WIDTH {
+                        self.vram[y][x] = 0;
                     }
-                    self.vram_changed = true;
-                    ProgramCounter::Next
                 }
-                // 00ee
-                ZeroZeroType::Ret => {
-                    self.sp -= 1;
-                    ProgramCounter::Jump(self.stack[self.sp])
-                }
-            },
+                self.vram_changed = true;
+                ProgramCounter::Next
+            }
+            Instruction::ZeroZero(_, _, ZeroZeroType::Ret) => {
+                self.sp -= 1;
+                ProgramCounter::Jump(self.stack[self.sp])
+            }
             // 1nnn
             Instruction::Jump(nnn) => ProgramCounter::Jump(*nnn),
             // 2nnn
@@ -286,7 +282,6 @@ impl Processor {
                 self.vram_changed = true;
                 ProgramCounter::Next
             }
-            //TODO maybe Instruction::SKP(x, SKPType::SkipIfPressed) {
             Instruction::SKP(x, SKPType::SkipIfPressed) => {
                 ProgramCounter::skip_cond(self.keypad[self.v[*x] as usize])
             }
@@ -351,7 +346,7 @@ impl Processor {
 #[deku(type = "u8", bits = "4")]
 pub enum Instruction {
     #[deku(id = "0x0")]
-    ZeroZero(ZeroZero),
+    ZeroZero(u4, u4, ZeroZeroType),
 
     #[deku(id = "0x1")]
     Jump(NNN),
@@ -397,15 +392,6 @@ pub enum Instruction {
 
     #[deku(id = "0xf")]
     LD(X, LDType),
-}
-
-#[derive(Debug, PartialEq, DekuRead, DekuWrite)]
-pub struct ZeroZero {
-    /// Always 0x0
-    unused: u4,
-    /// Always 0xe
-    unused1: u4,
-    t: ZeroZeroType,
 }
 
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
