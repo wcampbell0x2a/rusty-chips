@@ -59,12 +59,6 @@ impl Deref for KK {
     }
 }
 
-pub struct OutputState<'a> {
-    pub vram: &'a [[u8; Processor::WIDTH]; Processor::HEIGHT],
-    pub vram_changed: bool,
-    pub beep: bool,
-}
-
 pub enum ProgramCounter {
     Next,
     Skip,
@@ -80,6 +74,12 @@ impl ProgramCounter {
             Self::Next
         }
     }
+}
+
+pub struct TickOutput<'a> {
+    pub vram: &'a [[u8; Processor::WIDTH]; Processor::HEIGHT],
+    pub vram_changed: bool,
+    pub beep: bool,
 }
 
 pub struct Processor {
@@ -135,7 +135,7 @@ impl Processor {
         }
     }
 
-    pub fn tick(&mut self, keypad: [bool; 16]) -> OutputState {
+    pub fn tick(&mut self, keypad: [bool; 16]) -> TickOutput {
         self.keypad = keypad;
         self.vram_changed = false;
 
@@ -161,7 +161,7 @@ impl Processor {
             );
         }
 
-        OutputState {
+        TickOutput {
             vram: &self.vram,
             vram_changed: self.vram_changed,
             beep: self.sound_timer > 0,
