@@ -105,9 +105,7 @@ impl Processor {
 
     pub fn new() -> Self {
         let mut ram = [0_u8; Self::RAM];
-        for i in 0..FONT_SET.len() {
-            ram[i] = FONT_SET[i];
-        }
+        ram[..FONT_SET.len()].clone_from_slice(&FONT_SET[..]);
 
         Self {
             vram: [[0; Self::WIDTH]; Self::HEIGHT],
