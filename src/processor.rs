@@ -217,44 +217,48 @@ impl Processor {
                 ProgramCounter::Next
             }
             // 8xyt
-            Instruction::LDRegister(x, y, t) => {
-                match t {
-                    EightType::Store => {
-                        self.v[*x] = self.v[*y];
-                    }
-                    EightType::Or => {
-                        self.v[*x] |= self.v[*y];
-                    }
-                    EightType::And => {
-                        self.v[*x] &= self.v[*y];
-                    }
-                    EightType::Xor => {
-                        self.v[*x] ^= self.v[*y];
-                    }
-                    EightType::Add => {
-                        let vx = u16::from(self.v[*x]);
-                        let vy = u16::from(self.v[*y]);
-                        let result = vx + vy;
-                        self.v[*x] = result as u8;
-                        self.v[0x0f] = if result > 0xFF { 1 } else { 0 };
-                    }
-                    EightType::Sub => {
-                        self.v[0x0f] = if self.v[*x] > self.v[*y] { 1 } else { 0 };
-                        self.v[*x] = self.v[*x].wrapping_sub(self.v[*y]);
-                    }
-                    EightType::StoreShiftLeft => {
-                        self.v[0x0f] = self.v[*x] & 1;
-                        self.v[*x] >>= 1;
-                    }
-                    EightType::Set => {
-                        self.v[0x0f] = if self.v[*y] > self.v[*x] { 1 } else { 0 };
-                        self.v[*x] = self.v[*y].wrapping_sub(self.v[*x]);
-                    }
-                    EightType::StoreShiftRight => {
-                        self.v[0x0f] = (self.v[*x] & 0b1000_0000) >> 7;
-                        self.v[*x] <<= 1;
-                    }
-                }
+            Instruction::LDRegister(x, y, EightType::Store) => {
+                self.v[*x] = self.v[*y];
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, y, EightType::Or) => {
+                self.v[*x] |= self.v[*y];
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, y, EightType::And) => {
+                self.v[*x] &= self.v[*y];
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, y, EightType::Xor) => {
+                self.v[*x] ^= self.v[*y];
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, y, EightType::Add) => {
+                let vx = u16::from(self.v[*x]);
+                let vy = u16::from(self.v[*y]);
+                let result = vx + vy;
+                self.v[*x] = result as u8;
+                self.v[0x0f] = if result > 0xFF { 1 } else { 0 };
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, y, EightType::Sub) => {
+                self.v[0x0f] = if self.v[*x] > self.v[*y] { 1 } else { 0 };
+                self.v[*x] = self.v[*x].wrapping_sub(self.v[*y]);
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, _, EightType::StoreShiftLeft) => {
+                self.v[0x0f] = self.v[*x] & 1;
+                self.v[*x] >>= 1;
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, y, EightType::Set) => {
+                self.v[0x0f] = if self.v[*y] > self.v[*x] { 1 } else { 0 };
+                self.v[*x] = self.v[*y].wrapping_sub(self.v[*x]);
+                ProgramCounter::Next
+            }
+            Instruction::LDRegister(x, _, EightType::StoreShiftRight) => {
+                self.v[0x0f] = (self.v[*x] & 0b1000_0000) >> 7;
+                self.v[*x] <<= 1;
                 ProgramCounter::Next
             }
             Instruction::SNE(x, y, _) => ProgramCounter::skip_cond(self.v[*x] != self.v[*y]),
@@ -283,55 +287,56 @@ impl Processor {
                 ProgramCounter::Next
             }
             //TODO maybe Instruction::SKP(x, SKPType::SkipIfPressed) {
-            Instruction::SKP(x, t) => match t {
-                SKPType::SkipIfPressed => {
-                    ProgramCounter::skip_cond(self.keypad[self.v[*x] as usize])
-                }
-                SKPType::SkipIfNotPressed => {
-                    ProgramCounter::skip_cond(!self.keypad[self.v[*x] as usize])
-                }
-            },
-            Instruction::LD(x, t) => {
-                match t {
-                    LDType::Store => {
-                        self.v[*x] = self.delay_timer;
-                    }
-                    LDType::Wait => {
-                        self.keypad_waiting = true;
-                        self.keypad_register = *x;
-                    }
-                    LDType::SetDelayTimer => {
-                        self.delay_timer = self.v[*x];
-                    }
-                    LDType::SetSoundTimer => {
-                        self.sound_timer = self.v[*x];
-                    }
-                    LDType::Add => {
-                        self.i += self.v[*x] as usize;
-                        self.v[0x0f] = if self.i > 0x0F00 { 1 } else { 0 };
-                    }
-                    LDType::SetSprite => {
-                        self.i = (self.v[*x] as usize) * 5;
-                    }
-                    LDType::StoreBCD => {
-                        self.ram[self.i] = self.v[*x] / 100;
-                        self.ram[self.i + 1] = (self.v[*x] % 100) / 10;
-                        self.ram[self.i + 2] = self.v[*x] % 10;
-                    }
-                    LDType::StoreVToMem => {
-                        for i in 0..=*x {
-                            self.ram[self.i + i] = self.v[i];
-                        }
-                    }
-                    LDType::FillVWithMem => {
-                        for i in 0..=*x {
-                            self.v[i] = self.ram[self.i + i];
-                        }
-                    }
+            Instruction::SKP(x, SKPType::SkipIfPressed) => {
+                ProgramCounter::skip_cond(self.keypad[self.v[*x] as usize])
+            }
+            Instruction::SKP(x, SKPType::SkipIfNotPressed) => {
+                ProgramCounter::skip_cond(!self.keypad[self.v[*x] as usize])
+            }
+            Instruction::LD(x, LDType::Store) => {
+                self.v[*x] = self.delay_timer;
+                ProgramCounter::Next
+            }
+            Instruction::LD(x, LDType::Wait) => {
+                self.keypad_waiting = true;
+                self.keypad_register = *x;
+                ProgramCounter::Next
+            }
+            Instruction::LD(x, LDType::SetDelayTimer) => {
+                self.delay_timer = self.v[*x];
+                ProgramCounter::Next
+            }
+            Instruction::LD(x, LDType::SetSoundTimer) => {
+                self.sound_timer = self.v[*x];
+                ProgramCounter::Next
+            }
+            Instruction::LD(x, LDType::Add) => {
+                self.i += self.v[*x] as usize;
+                self.v[0x0f] = if self.i > 0x0F00 { 1 } else { 0 };
+                ProgramCounter::Next
+            }
+            Instruction::LD(x, LDType::SetSprite) => {
+                self.i = (self.v[*x] as usize) * 5;
+                ProgramCounter::Next
+            }
+            Instruction::LD(x, LDType::StoreBCD) => {
+                self.ram[self.i] = self.v[*x] / 100;
+                self.ram[self.i + 1] = (self.v[*x] % 100) / 10;
+                self.ram[self.i + 2] = self.v[*x] % 10;
+                ProgramCounter::Next
+            }
+            Instruction::LD(x, LDType::StoreVToMem) => {
+                for i in 0..=*x {
+                    self.ram[self.i + i] = self.v[i];
                 }
                 ProgramCounter::Next
             }
-            _ => panic!(),
+            Instruction::LD(x, LDType::FillVWithMem) => {
+                for i in 0..=*x {
+                    self.v[i] = self.ram[self.i + i];
+                }
+                ProgramCounter::Next
+            }
         };
         match pc {
             ProgramCounter::Next => self.pc += OP_SIZE,
